@@ -148,17 +148,25 @@ class System():
     """
     class to define a computer system
     """
+    SYSTEMS = ('ls5', 'stampede2', 'frontera')
     NCORES_PER_NODE = collections.defaultdict(lambda: 24)
-    MAXNODES = collections.defaultdict(lambda: 1200)
+    NCORES_PER_NODE['ls5'] = 24
+    NCORES_PER_NODE['frontera'] = 56
+    NCORES_PER_NODE['stampede2'] = 48 # sklyake
 
-    def __init__(self, systems=('ls5', 'stampede2', 'frontera', 'local','ip6')):
+    MAXNODES = collections.defaultdict(lambda: 1200)
+    MAXNODES['ls5'] = 171
+    MAXNODES['frontera'] = 512
+    MAXNODES['stampede2'] = 128 # sklyake
+
+    def __init__(self, ):
         # detect the host system
-        self.hostname = self.get_host_system(systems)
+        self.hostname = self.get_host_system_name()
         self.ncores_per_node = self.NCORES_PER_NODE[self.hostname]
         self.maxnodes = self.MAXNODES[self.hostname]
 
         # set up constants for each system
-    def get_host_system(self, systems):
+    def get_host_system_name(self, systems):
         """
         get identity of host system
         exit if not supported
@@ -166,7 +174,7 @@ class System():
         fq_hostname = socket.getfqdn()
         
         hostname = None
-        for s in systems:
+        for s in self.SYSTEMS:
             if fq_hostname.find(s) > -1:
                 hostname = s
                 break
