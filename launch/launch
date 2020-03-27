@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 # launch script for TACC systems
-# deals with both command files for parametric launcher and with single commands
+# deals with both command files for parametric launcher
+# and with single commands
 
 import argparse
 import sys
@@ -10,11 +11,7 @@ import math
 import collections
 import tempfile
 import subprocess
-#from launch_slurm_ls5 import launch_slurm_ls5
-#from launch_slurm_wrangler import launch_slurm_wrangler
 import socket
-
-
 
 
 def get_args():
@@ -54,7 +51,7 @@ def get_args():
         help='email address for notification',
         dest='email')
     parser.add_argument(
-        '-f','--qsubfile',
+        '-f', '--qsubfile',
         help='name of qsub file',
         dest='qsubfile')
     parser.add_argument(
@@ -74,7 +71,7 @@ def get_args():
         action="store_true",
         default=False)
     parser.add_argument(
-        '-u','--ignoreuser',
+        '-u', '--ignoreuser',
         help='ignore ~/.launch_user',
         dest='ignoreuser',
         action="store_true",
@@ -98,21 +95,21 @@ def get_args():
         default=None)
     parser.add_argument(
         '-N', '--nodes',
-        help = 'request that a minimum number of nodes be allocated to this job',
-        dest = 'nodes',
+        help='request that a minimum number of nodes be allocated to this job',
+        dest='nodes',
         default=None)
 
     # parse args to get serial command if it's passed
-    (args, command )=parser.parse_known_args(sys.argv[1:])
-    if len(command)>0:
-        cmd=' '.join(command)
-        print('found serial command:%s'%command)
+    (args, command) = parser.parse_known_args(sys.argv[1:])
+    if len(command) > 0:
+        cmd = ' '.join(command)
+        print('found serial command:%s' % command)
     else:
-        cmd=None
+        cmd = None
     if cmd is None and args.script_name is None:
-        print('ERROR: you must either specify a script name (using -s) or a command to run\n\n')
+        print('ERROR: you must either specify a script name (using -s) or a command to run\n\n') # noqa
         sys.exit()
-    
+
     return(args, cmd)
 
 
@@ -121,27 +118,10 @@ def check_for_launcher_module():
     make sure launcher module has been loaded
     exit if not loaded
     """
-    loaded_modules=os.environ['LOADEDMODULES']
-    if not loaded_modules.find('launcher')>-1:
-        print('you must first load the launcher module: module load launcher')
+    loaded_modules = os.environ['LOADEDMODULES']
+    if not loaded_modules.find('launcher') > -1:
+        print('you must first load the launcher module: module load launcher') # noqa
         sys.exit(0)
-
-
-
-
-def foo():
-    hostname = socket.gethostname()
-    if hostname.find('wrangler')>-1:
-        launch_slurm_wrangler(serialcmd=cmd, script_name=args.script_name, runtime=args.runtime,
-                    jobname=args.jobname, projname=args.projname, queue=args.queue, email=args.email, qsubfile=args.qsubfile, keepqsubfile=args.keepqsubfile,
-                    ignoreuser=args.ignoreuser, test=args.test, parser=parser, c=args, verbose=0,
-                    hold=args.hold, outfile=[], cwd=[], nodes=args.nodes, use_hyperthreading=args.use_hyperthreading)
-    else:
-        launch_slurm_ls5(serialcmd=cmd, script_name=args.script_name, runtime=args.runtime,
-                    jobname=args.jobname, projname=args.projname, queue=args.queue, email=args.email, qsubfile=args.qsubfile, keepqsubfile=args.keepqsubfile,
-                    ignoreuser=args.ignoreuser, test=args.test, parser=parser, c=args, verbose=0,
-                    hold=args.hold, outfile=[], cwd=[], nodes=args.nodes, use_hyperthreading=args.use_hyperthreading)
-    sys.exit(0)
 
 
 class System():
@@ -152,12 +132,12 @@ class System():
     NCORES_PER_NODE = collections.defaultdict(lambda: 24)
     NCORES_PER_NODE['ls5'] = 24
     NCORES_PER_NODE['frontera'] = 56
-    NCORES_PER_NODE['stampede2'] = 48 # sklyake
+    NCORES_PER_NODE['stampede2'] = 48  # sklyake
 
     MAXNODES = collections.defaultdict(lambda: 1200)
     MAXNODES['ls5'] = 171
     MAXNODES['frontera'] = 512
-    MAXNODES['stampede2'] = 128 # sklyake
+    MAXNODES['stampede2'] = 128  # sklyake
 
     def __init__(self, ):
         # detect the host system
@@ -172,7 +152,7 @@ class System():
         exit if not supported
         """
         fq_hostname = socket.getfqdn()
-        
+
         hostname = None
         for s in self.SYSTEMS:
             if fq_hostname.find(s) > -1:
@@ -182,7 +162,7 @@ class System():
             print('your system is not currently supported:', fq_hostname)
             sys.exit(0)
         else:
-            print('using configuration for',hostname)
+            print('using configuration for', hostname)
         return(hostname)
 
 
@@ -212,7 +192,6 @@ class Job():
         self.qsubfilepath = None
         self.ncmds = None
 
-
     def create_launch_script(self):
         """
         create launch script for slurm job
@@ -226,22 +205,24 @@ class Job():
         if self.serialcmd is not None:
             print('sorry, serial mode is not currently supported')
             sys.exit(1)
-            ## TO BE IMPLEMENTED LATER
-            parametric=0
-            print('Running serial command: '+cmd)
-            nnodes = 1
-            parenv='1way'
-            queue='serial'
+            # TO BE IMPLEMENTED LATER
+            # self.parametric = 0
+            # print('Running serial command: ' + cmd)
+            # nnodes = 1
+            # parenv = '1way'
+            # queue = 'serial'
         elif self.args.script_name is not None:
             self.parametric = True
             if self.args.verbose:
-                print('Submitting parametric job file: ', self.args.script_name)
+                print(
+                    'Submitting parametric job file: ',
+                    self.args.script_name)
 
             # read script file
             try:
-                with open(self.args.script_name,'r') as f:
+                with open(self.args.script_name, 'r') as f:
                     script_cmds = f.readlines()
-            except:
+            except FileNotFoundError:
                 print('%s does not exist -e!' % self.args.script_name)
                 sys.exit(0)
 
@@ -251,15 +232,18 @@ class Job():
             # check for empty lines in command script
             for s in script_cmds:
                 if len(s) == 0:
-                    print('command file contains empty lines - please remove them first')
+                    print(
+                        'command file contains empty lines - please remove them first') # noqa
                     sys.exit()
             if self.args.nodes is None:
-                self.args.nodes = math.ceil(self.ncmds/self.host_system.ncores_per_node)
-                print('Number of compute nodes not specified - estimating as %d' % self.args.nodes)
-        
+                self.args.nodes = math.ceil(
+                    self.ncmds/self.host_system.ncores_per_node)
+                print('Number of compute nodes not specified - estimating as %d' % # noqa
+                    self.args.nodes)
+
             if int(self.args.nodes) > self.host_system.maxnodes:
                 self.args.nodes = self.host_system.maxnodes
-        
+
         # create qsub file
         if self.qsubfilepath is None:
             qsubfile, self.qsubfilepath = tempfile.mkstemp(
@@ -272,47 +256,54 @@ class Job():
         print('Outputting qsub commands to %s' % self.qsubfilepath)
         with open(self.qsubfilepath, 'w') as qsubfile:
             qsubfile.write('#!/bin/bash\n#\n')
-            qsubfile.write('# SLURM control file automatically created by launch\n')
+            qsubfile.write(
+                '# SLURM control file automatically created by launch\n')
             if self.parametric == 1:
-                qsubfile.write('#SBATCH -N %d\n'%int(self.args.nodes))
+                qsubfile.write(
+                    '#SBATCH -N %d\n' % int(self.args.nodes))
             else:
-                qsubfile.write('# Launching single command: %s\n#\n#\n'%cmd)
-                
-            qsubfile.write('#SBATCH -J %s       # Job Name\n' % self.args.jobname)
-            qsubfile.write('#SBATCH -o {0}.o%j # Name of the output file (eg. myMPI.oJobID)\n'.format(self.args.jobname))
+                qsubfile.write(
+                    '# Launching single command: %s\n#\n#\n' % cmd)
+
+            qsubfile.write(
+                '#SBATCH -J %s       # Job Name\n' % self.args.jobname)
+            qsubfile.write(
+                '#SBATCH -o {0}.o%j # Name of the output file )\n'.format(
+                    self.args.jobname))
             qsubfile.write('#SBATCH -p %s\n' % self.args.queue)
             qsubfile.write('#SBATCH -t %s\n' % self.args.runtime)
             qsubfile.write('#SBATCH -n %d\n' % self.ncmds)
 
-
-            if self.args.hold is not None: 
+            if self.args.hold is not None:
                 qsubfile.write("#SBATCH -d afterok")
                 qsubfile.write(":{0}".format(int(self.args.hold)))
                 qsubfile.write('\n')
 
             if self.args.projname is not None:
                 qsubfile.write("#SBATCH -A {0}\n".format(self.args.projname))
-            
-            qsubfile.write('#----------------\n# Job Submission\n#----------------\n')
-            
+
+            qsubfile.write('#-----------\n# Job Submission\n#-----------\n')
+
             if not self.parametric:
                 # currently not supported...
-                qsubfile.write('\n\nset -x                   # Echo commands, use "set echo" with csh\n')
+                qsubfile.write(
+                    '\n\nset -x  # Echo commands, use "set echo" with csh\n')
                 qsubfile.write(cmd+'\n')
-            
-            else:            
-                qsubfile.write('export LAUNCHER_PLUGIN_DIR=$LAUNCHER_DIR/plugins\n')
-                qsubfile.write('export LAUNCHER_RMI=SLURM\n')
-                qsubfile.write('export LAUNCHER_JOB_FILE=%s\n' % self.args.script_name)
-            
-                #qsubfile.write('cd $WORKDIR\n')
-                #qsubfile.write('echo " WORKING DIR:   $WORKDIR/"\n')
+
+            else:
+                qsubfile.write(
+                    'export LAUNCHER_PLUGIN_DIR=$LAUNCHER_DIR/plugins\n')
+                qsubfile.write(
+                    'export LAUNCHER_RMI=SLURM\n')
+                qsubfile.write(
+                    'export LAUNCHER_JOB_FILE=%s\n' % self.args.script_name)
+
+                # qsubfile.write('cd $WORKDIR\n')
+                # qsubfile.write('echo " WORKING DIR:   $WORKDIR/"\n')
                 qsubfile.write('$LAUNCHER_DIR/paramrun\n')
+                qsubfile.write(
+                    'echo " "\necho " Parameteric Job Complete"\necho " "\n')
 
-
-            
-                qsubfile.write('echo " "\necho " Parameteric Job Complete"\necho " "\n')
-                
     def launch_job(self):
         """
         launch the job
@@ -328,8 +319,8 @@ class Job():
             for line in process.stdout:
                 line = line.decode("utf-8")
                 print(line.strip())
-                if line.find('Submitted batch job')==0:
-                        jobid=int(line.strip().split(' ')[3])
+                if line.find('Submitted batch job') == 0:
+                    jobid = int(line.strip().split(' ')[3])
 
             process.wait()
 
@@ -341,8 +332,6 @@ class Job():
 
 
 if __name__ == '__main__':
-    MAXCORES=4104
-    STAMPEDE = 'stampede'
 
     args, cmd = get_args()
 
