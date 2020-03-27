@@ -166,7 +166,7 @@ class System():
         self.maxnodes = self.MAXNODES[self.hostname]
 
         # set up constants for each system
-    def get_host_system_name(self, systems):
+    def get_host_system_name(self):
         """
         get identity of host system
         exit if not supported
