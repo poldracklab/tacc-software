@@ -1,0 +1,4 @@
+module use /work/01329/poldrack/tacc-software/frontera/modules
+module load npm
+module load launch
+
